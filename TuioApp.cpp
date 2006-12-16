@@ -18,37 +18,51 @@ class JackAudioDriver
 		JackAudioDriver();
 		~JackAudioDriver();
 
-	// These are the static versions of the callbacks, they call
-	// the non-static ones below
-	inline static int  process_cb(jack_nframes_t nframes, void* const jack_driver);
-	inline static void shutdown_cb(void* const jack_driver);
-	inline static int  buffer_size_cb(jack_nframes_t nframes, void* const jack_driver);
-	inline static int  sample_rate_cb(jack_nframes_t nframes, void* const jack_driver);
+		// These are the static versions of the callbacks, they call
+		// the non-static ones below
 
-	// Non static callbacks
-	int  m_process_cb(jack_nframes_t nframes);
-	void m_shutdown_cb();
-	int  m_buffer_size_cb(jack_nframes_t nframes);
-	int  m_sample_rate_cb(jack_nframes_t nframes);
+		inline static int  process_cb(jack_nframes_t nframes, void* const jack_driver);
+
+		inline static void shutdown_cb(void* const jack_driver);
+
+		inline static int  buffer_size_cb(jack_nframes_t nframes, void* const jack_driver);
+
+		inline static int  sample_rate_cb(jack_nframes_t nframes, void* const jack_driver);
+
+		// Non static callbacks
+		int  m_process_cb(jack_nframes_t nframes);
+
+		void m_shutdown_cb();
+
+		int  m_buffer_size_cb(jack_nframes_t nframes);
+
+		int  m_sample_rate_cb(jack_nframes_t nframes);
 
 
-	void generate_sine(jack_nframes_t nframes);
+		void generate_sine(jack_nframes_t nframes);
 
 
-	volatile bool note_on;// = false;
-	volatile float pitch;// = 440.0;
+		volatile bool note_on;// = false;
 
-	jack_port_t*          m_jack_port;
-	jack_client_t*         m_client;
-	jack_nframes_t         m_buffer_size;
-	jack_nframes_t         m_sample_rate;
-	jack_default_audio_sample_t *m_jack_buffer;
+		volatile float pitch;// = 440.0;
 
-	float m_amplitude;
-	float m_phase;
+		jack_port_t*          m_jack_port;
 
-	jack_nframes_t m_start_of_current_cycle;
-	jack_nframes_t m_start_of_last_cycle;
+		jack_client_t*         m_client;
+
+		jack_nframes_t         m_buffer_size;
+
+		jack_nframes_t         m_sample_rate;
+
+		jack_default_audio_sample_t *m_jack_buffer;
+
+		float m_amplitude;
+
+		float m_phase;
+
+		jack_nframes_t m_start_of_current_cycle;
+
+		jack_nframes_t m_start_of_last_cycle;
 };
 
 inline int JackAudioDriver::process_cb(jack_nframes_t nframes, void* jack_driver)
@@ -75,18 +89,20 @@ inline int JackAudioDriver::sample_rate_cb(jack_nframes_t nframes, void* jack_dr
 
 // create driver
 JackAudioDriver::JackAudioDriver()
-	: note_on(false)
-	, pitch(440.0)
-	, m_jack_port(0)
-	, m_client(0)
-	, m_buffer_size(0)
-	, m_sample_rate(0)
-	, m_jack_buffer(0)
-	, m_amplitude(1.0)
-	, m_phase(0.0)
+		: note_on(false)
+		, pitch(440.0)
+		, m_jack_port(0)
+		, m_client(0)
+		, m_buffer_size(0)
+		, m_sample_rate(0)
+		, m_jack_buffer(0)
+		, m_amplitude(1.0)
+		, m_phase(0.0)
 {
 	m_client = jack_client_new("tuiobleep");
-	if (m_client == NULL) {
+
+	if (m_client == NULL)
+	{
 		cerr << "[JackAudioDriver] Unable to connect to Jack.  Exiting." << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -101,9 +117,9 @@ JackAudioDriver::JackAudioDriver()
 
 	// register port
 	m_jack_port = jack_port_register(m_client,
-		"/", JACK_DEFAULT_AUDIO_TYPE,
-		JackPortIsOutput,
-		0);
+	                                 "/", JACK_DEFAULT_AUDIO_TYPE,
+	                                 JackPortIsOutput,
+	                                 0);
 
 	// prepare buffer
 	m_jack_buffer = (jack_default_audio_sample_t*)jack_port_get_buffer(m_jack_port, m_buffer_size);
@@ -111,10 +127,13 @@ JackAudioDriver::JackAudioDriver()
 	// activate driver
 	jack_set_process_callback(m_client, process_cb, this);
 
-	if (jack_activate(m_client)) {
+	if (jack_activate(m_client))
+	{
 		cerr << "[JackAudioDriver] Could not activate Jack client, aborting." << endl;
 		exit(EXIT_FAILURE);
-	} else {
+	}
+	else
+	{
 		cout << "[JackAudioDriver] Activated Jack client." << endl;
 	}
 }
@@ -122,13 +141,13 @@ JackAudioDriver::JackAudioDriver()
 JackAudioDriver::~JackAudioDriver()
 {
 // deactivate driver
-		jack_deactivate(m_client);
+	jack_deactivate(m_client);
 
-		jack_port_unregister(m_client, m_jack_port);
+	jack_port_unregister(m_client, m_jack_port);
 
-		cout << "[JackAudioDriver] Deactivated Jack client." << endl;
+	cout << "[JackAudioDriver] Deactivated Jack client." << endl;
 // destroy driver
-		jack_client_close(m_client);
+	jack_client_close(m_client);
 }
 
 // processing
@@ -164,7 +183,8 @@ JackAudioDriver::m_process_cb(jack_nframes_t nframes)
 //	assert(m_root_patch != NULL);
 //	m_root_patch->run(nframes);
 // 	cout << "jack callback: note on " << note_on << ", pitch " << pitch << endl;
-	if(note_on)
+
+	if (note_on)
 	{
 		generate_sine(nframes);
 	}
@@ -175,19 +195,24 @@ JackAudioDriver::m_process_cb(jack_nframes_t nframes)
 void
 JackAudioDriver::generate_sine(jack_nframes_t nframes)
 {
-    float phase_inc = pitch / m_sample_rate;
+	float phase_inc = pitch / m_sample_rate;
 //     float** framedata = (float**)m_jack_buffer;
-    for(jack_nframes_t i = 0; i < nframes; i++)
-    {
-        m_phase += phase_inc;
-        if(m_phase > 1.0) m_phase -= 1.0;
-        float d = m_amplitude * sinf(m_phase*TWOPI);
-        m_jack_buffer[i] = d;
-/*        for(int j = 0; j < frame->channels; j++)
-        {
-            framedata[j][i] = d;
-        }*/
-    }
+
+	for (jack_nframes_t i = 0; i < nframes; i++)
+	{
+		m_phase += phase_inc;
+
+		if (m_phase > 1.0) m_phase -= 1.0;
+
+		float d = m_amplitude * sinf(m_phase*TWOPI);
+
+		m_jack_buffer[i] = d;
+
+		/*        for(int j = 0; j < frame->channels; j++)
+		        {
+		            framedata[j][i] = d;
+		        }*/
+	}
 }
 
 extern volatile bool quit_flag;
@@ -200,13 +225,14 @@ JackAudioDriver::m_shutdown_cb()
 }
 
 int
+
 JackAudioDriver::m_sample_rate_cb(jack_nframes_t nframes)
 {
 //	if (m_is_activated) {
 //		cerr << "[JackAudioDriver] Om does not support changing sample rate on the fly (yet).  Aborting." << endl;
 //		exit(EXIT_FAILURE);
 //	} else {
-		m_sample_rate = nframes;
+	m_sample_rate = nframes;
 //	}
 	return 0;
 }
@@ -242,7 +268,8 @@ JackAudioDriver *driver;
 
 
 // TUIO handler
-void TuioApp::addTuioObj(unsigned int s_id, unsigned int f_id) {
+void TuioApp::addTuioObj(unsigned int s_id, unsigned int f_id)
+{
 	TuioObject nobj(s_id,f_id);
 	objectList.push_back(nobj);
 
@@ -250,9 +277,12 @@ void TuioApp::addTuioObj(unsigned int s_id, unsigned int f_id) {
 // 	cout << "added " << f_id << " (" << s_id << ")" << endl;
 }
 
-void TuioApp::updateTuioObj(unsigned int s_id, unsigned int f_id, float x, float y, float a, float X, float Y, float A, float m, float r) {
-	for (tuioObject = objectList.begin(); tuioObject!=objectList.end(); tuioObject++) {
-		if (tuioObject->session_id==s_id) {
+void TuioApp::updateTuioObj(unsigned int s_id, unsigned int f_id, float x, float y, float a, float X, float Y, float A, float m, float r)
+{
+	for (tuioObject = objectList.begin(); tuioObject!=objectList.end(); tuioObject++)
+	{
+		if (tuioObject->session_id==s_id)
+		{
 			tuioObject->update(x,y,a);
 
 			a /= TWOPI; // normalise to 0..1
@@ -261,12 +291,16 @@ void TuioApp::updateTuioObj(unsigned int s_id, unsigned int f_id, float x, float
 			break;
 		}
 	}
+
 	cout << f_id << " (" << s_id << ") " << x << " " << y << " " << a << endl;
 }
 
-void TuioApp::removeTuioObj(unsigned int s_id, unsigned int f_id) {
-	for (tuioObject = objectList.begin(); tuioObject!=objectList.end(); tuioObject++) {
-		if (tuioObject->session_id==s_id) {
+void TuioApp::removeTuioObj(unsigned int s_id, unsigned int f_id)
+{
+	for (tuioObject = objectList.begin(); tuioObject!=objectList.end(); tuioObject++)
+	{
+		if (tuioObject->session_id==s_id)
+		{
 			objectList.erase(tuioObject);
 
 			driver->note_on = false;
@@ -275,11 +309,12 @@ void TuioApp::removeTuioObj(unsigned int s_id, unsigned int f_id) {
 			break;
 		}
 	}
+
 // 	cout << "removed " << f_id << " (" << s_id << ")" << endl;
 }
 
-void TuioApp::refresh() {
-}
+void TuioApp::refresh()
+{}
 
 void TuioApp::startClient(int port)
 {
@@ -299,7 +334,7 @@ void TuioApp::stopClient()
 TuioApp::TuioApp()
 {
 	driver = new JackAudioDriver;
-    startClient(3333);
+	startClient(3333);
 }
 
 TuioApp::~TuioApp()
